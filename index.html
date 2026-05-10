@@ -520,7 +520,7 @@ function renderDetail(idx) {
         <div class="yuanta-block rounded-xl p-4 h-full">
             <div class="flex items-center gap-2 mb-2">
                 <span class="text-base">🏢</span>
-                <span class="text-sm font-bold text-blue-800">元大視角</span>
+                <span class="text-sm font-bold text-blue-800">元大洞察</span>
                 <div class="flex flex-wrap gap-1">
                     ${yuantaEntities.map(e => `<span class="text-xs px-2 py-0.5 rounded-full bg-blue-100 text-blue-700 font-medium">${esc(e.trim())}</span>`).join('')}
                 </div>
@@ -533,7 +533,7 @@ function renderDetail(idx) {
         <div class="insight-block rounded-xl p-4 h-full">
             <div class="flex items-center gap-2 mb-2">
                 <span class="text-base">💡</span>
-                <span class="text-sm font-bold text-orange-700">PM 洞察</span>
+                <span class="text-sm font-bold text-orange-700">關鍵洞察</span>
             </div>
             <p class="text-sm text-gray-700 leading-relaxed">${formatInsight(pmInsight)}</p>
         </div>` : '';
