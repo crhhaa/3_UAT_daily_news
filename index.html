@@ -1,0 +1,635 @@
+<!DOCTYPE html>
+<html lang="zh-TW">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>數金情報站 - 集團剪報</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/PapaParse/5.4.1/papaparse.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/pdf.js/4.4.168/pdf.min.mjs" type="module"></script>
+    <script type="module">
+        import * as pdfjsLib from 'https://cdnjs.cloudflare.com/ajax/libs/pdf.js/4.4.168/pdf.min.mjs';
+        pdfjsLib.GlobalWorkerOptions.workerSrc = 'https://cdnjs.cloudflare.com/ajax/libs/pdf.js/4.4.168/pdf.worker.min.mjs';
+        window.renderPdfPage = async function(filename, pageNum) {
+            const canvas = document.getElementById('pdf-canvas');
+            if (!canvas) return;
+            const container = canvas.parentElement;
+            canvas.style.display = 'none';
+            let loadingEl = container.querySelector('.pdf-loading');
+            if (!loadingEl) {
+                loadingEl = document.createElement('p');
+                loadingEl.className = 'pdf-loading text-xs text-gray-400 text-center py-4';
+                loadingEl.textContent = '載入中...';
+                container.appendChild(loadingEl);
+            }
+            try {
+                const pdf = await pdfjsLib.getDocument(`data/${filename}`).promise;
+                const page = await pdf.getPage(pageNum);
+                const scale = canvas.parentElement.offsetWidth / page.getViewport({ scale: 1 }).width;
+                const viewport = page.getViewport({ scale: Math.max(scale, 1.5) });
+                canvas.width = viewport.width;
+                canvas.height = viewport.height;
+                await page.render({ canvasContext: canvas.getContext('2d'), viewport }).promise;
+                loadingEl.remove();
+                canvas.style.display = 'block';
+            } catch (e) {
+                loadingEl.textContent = '原文圖片載入失敗';
+            }
+        };
+    </script>
+    <style>
+        html { scroll-behavior: smooth; }
+        ::-webkit-scrollbar { width: 5px; height: 5px; }
+        ::-webkit-scrollbar-track { background: transparent; }
+        ::-webkit-scrollbar-thumb { background-color: #d1d5db; border-radius: 20px; }
+        body { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', 'PingFang TC', 'Noto Sans TC', sans-serif; }
+
+        .hero-bg { background: linear-gradient(135deg, #0f2460 0%, #1e3a8a 50%, #1e40af 100%); }
+        .card { box-shadow: 0 1px 4px rgba(0,0,0,0.06), 0 4px 16px rgba(0,0,0,0.04); }
+
+        .insight-block {
+            border-left: 4px solid #f97316;
+            background: linear-gradient(to right, #fff7ed, #fffbf7);
+        }
+        .yuanta-block {
+            border-left: 4px solid #3b82f6;
+            background: linear-gradient(to right, #eff6ff, #f8faff);
+        }
+
+        .news-nav-item {
+            display: flex; align-items: flex-start; gap: 8px;
+            padding: 6px 10px; border-radius: 8px;
+            cursor: pointer; text-align: left; width: 100%;
+            border: none; background: none; transition: background 0.12s;
+        }
+        .news-nav-item:hover { background: #f8fafc; }
+        .news-nav-item.active { background: #eff6ff; }
+        .news-nav-item.active .nav-title { color: #1d4ed8; font-weight: 500; }
+        .news-nav-item .nav-num {
+            font-size: 10px; color: #9ca3af;
+            font-family: ui-monospace, monospace;
+            flex-shrink: 0; margin-top: 3px; width: 18px; text-align: right;
+        }
+        .news-nav-item.active .nav-num { color: #93c5fd; }
+        .news-nav-item .nav-title { font-size: 12px; color: #4b5563; line-height: 1.45; }
+        .nav-cat-dot {
+            width: 6px; height: 6px; border-radius: 50%; flex-shrink: 0; margin-top: 5px;
+        }
+
+        /* Filter pills */
+        .filter-pill {
+            padding: 4px 12px; border-radius: 999px;
+            font-size: 12px; font-weight: 600;
+            border: 1px solid #d1d5db; background: white; color: #4b5563;
+            cursor: pointer; transition: all 0.15s; white-space: nowrap;
+        }
+        .filter-pill:hover { background: #eff6ff; }
+        .filter-pill.active-cat { background: #f97316; color: white; border-color: #f97316; }
+        .filter-pill.active-group { background: #4f46e5; color: white; border-color: #4f46e5; }
+        .filter-pill.active-type { background: #0d9488; color: white; border-color: #0d9488; }
+
+        /* Mobile nav drawer */
+        #mobileNavOverlay {
+            position: fixed; inset: 0; z-index: 151;
+            background: rgba(10,20,40,0.45); backdrop-filter: blur(3px);
+            opacity: 0; pointer-events: none; transition: opacity 0.25s;
+        }
+        #mobileNavOverlay.open { opacity: 1; pointer-events: auto; }
+        #mobileNavDrawer {
+            position: fixed; left: 0; right: 0; bottom: 0; z-index: 152;
+            background: white; border-radius: 20px 20px 0 0;
+            max-height: 72vh; display: flex; flex-direction: column;
+            transform: translateY(110%);
+            transition: transform 0.3s cubic-bezier(0.4,0,0.2,1);
+            box-shadow: 0 -8px 40px rgba(0,0,0,0.15);
+        }
+        #mobileNavDrawer.open { transform: translateY(0); }
+
+        /* Inline PDF embed */
+        .pdf-embed-container { border-radius: 12px; overflow: hidden; border: 1px solid #e5e7eb; }
+        .pdf-embed-container iframe { display: block; }
+
+        mark { background: #fef08a; border-radius: 2px; padding: 0 2px; }
+    </style>
+</head>
+<body class="bg-slate-100 text-gray-800 antialiased">
+
+<!-- ═══════════════════════════════════════════════════
+     NAVBAR
+═══════════════════════════════════════════════════ -->
+<nav class="hero-bg text-white sticky top-0 z-50" style="box-shadow:0 2px 20px rgba(0,0,0,0.25);">
+    <div class="max-w-7xl mx-auto px-4 sm:px-6">
+        <div class="flex items-center justify-between h-14">
+            <div class="flex items-center gap-2.5 flex-shrink-0">
+                <div class="w-7 h-7 rounded-lg bg-orange-500 flex items-center justify-center flex-shrink-0">
+                    <svg class="w-4 h-4 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 7h8m0 0v8m0-8l-8 8-4-4-6 6"/>
+                    </svg>
+                </div>
+                <span class="text-sm font-bold tracking-widest">集團剪報</span>
+            </div>
+        </div>
+    </div>
+</nav>
+
+<!-- ═══════════════════════════════════════════════════
+     HERO
+═══════════════════════════════════════════════════ -->
+<div class="hero-bg text-white py-8 sm:py-10 relative overflow-hidden" style="box-shadow:0 4px 30px rgba(15,36,96,0.3);">
+    <div class="absolute -top-16 -right-16 w-64 h-64 rounded-full bg-white/5 pointer-events-none"></div>
+    <div class="absolute -bottom-20 -left-10 w-48 h-48 rounded-full bg-orange-500/10 pointer-events-none"></div>
+    <div class="max-w-7xl mx-auto px-4 sm:px-6 relative z-10">
+        <div class="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
+            <div>
+                <p class="text-white/50 text-xs font-semibold uppercase tracking-widest mb-1.5">Daily Financial News</p>
+                <h1 class="text-3xl sm:text-4xl font-extrabold tracking-wide mb-1">集團剪報</h1>
+                <p class="text-white/60 text-sm" id="heroSubtitle">載入中...</p>
+            </div>
+            <div class="flex-shrink-0">
+                <select id="dateSelector"
+                        class="border-0 rounded-xl px-4 py-2.5 font-medium text-sm focus:outline-none focus:ring-2 focus:ring-white/30 cursor-pointer [&>option]:text-gray-800"
+                        style="background-color:rgba(255,255,255,0.12); color:white;">
+                    <option value="">載入中...</option>
+                </select>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- ═══════════════════════════════════════════════════
+     MAIN CONTENT
+═══════════════════════════════════════════════════ -->
+<div class="max-w-7xl mx-auto px-4 sm:px-6 py-6">
+
+    <!-- 本日新聞摘要 -->
+    <div id="summarySection" class="bg-white rounded-2xl card p-5 mb-5" style="border-top: 3px solid #f97316;">
+        <h2 class="text-base font-bold text-blue-900 mb-3 flex items-center gap-2 uppercase tracking-widest">
+            <span class="text-orange-500">📋</span> 本日新聞摘要
+        </h2>
+        <ul id="summaryList" class="space-y-2 text-sm text-gray-700 leading-relaxed">
+            <li class="text-gray-400">資料載入中...</li>
+        </ul>
+    </div>
+
+    <!-- 篩選區 -->
+    <div class="bg-white rounded-2xl card p-4 mb-5">
+        <!-- 新聞類別 -->
+        <div class="flex flex-wrap items-center gap-2 mb-3">
+            <span class="text-sm font-medium text-gray-600 whitespace-nowrap">📰 新聞類別：</span>
+            <button class="filter-pill active-cat" data-cat="ALL">全部</button>
+            <button class="filter-pill" data-cat="總體經濟">📊 總體經濟</button>
+            <button class="filter-pill" data-cat="股市行情">📈 股市行情</button>
+            <button class="filter-pill" data-cat="競業動態">🏢 競業動態</button>
+            <button class="filter-pill" data-cat="元大新聞">⭐ 元大新聞</button>
+            <button class="filter-pill" data-cat="兩岸金融">🌏 兩岸金融</button>
+            <button class="filter-pill" data-cat="法規監理">⚖️ 法規監理</button>
+        </div>
+        <!-- 集團篩選 -->
+        <div class="flex flex-wrap items-center gap-2 mb-3">
+            <span class="text-sm font-medium text-gray-600 whitespace-nowrap">🏦 集團：</span>
+            <button class="filter-pill active-group" data-group="ALL">全部</button>
+            <button class="filter-pill" data-group="元大">元大</button>
+            <button class="filter-pill" data-group="國泰">國泰</button>
+            <button class="filter-pill" data-group="富邦">富邦</button>
+            <button class="filter-pill" data-group="中信">中信</button>
+            <button class="filter-pill" data-group="玉山">玉山</button>
+            <button class="filter-pill" data-group="永豐">永豐</button>
+            <button class="filter-pill" data-group="台新">台新</button>
+            <button class="filter-pill" data-group="凱基">凱基</button>
+            <button class="filter-pill" data-group="兆豐">兆豐</button>
+            <button class="filter-pill" data-group="第一">第一</button>
+            <button class="filter-pill" data-group="合庫">合庫</button>
+            <button class="filter-pill" data-group="華南">華南</button>
+        </div>
+        <!-- 業別篩選 -->
+        <div class="flex flex-wrap items-center gap-2 mb-3">
+            <span class="text-sm font-medium text-gray-600 whitespace-nowrap">🏷️ 業別：</span>
+            <button class="filter-pill active-type" data-type="ALL">全部</button>
+            <button class="filter-pill" data-type="金控">金控</button>
+            <button class="filter-pill" data-type="銀行">銀行</button>
+            <button class="filter-pill" data-type="人壽">人壽</button>
+            <button class="filter-pill" data-type="證券">證券</button>
+            <button class="filter-pill" data-type="投信">投信</button>
+            <button class="filter-pill" data-type="投顧">投顧</button>
+            <button class="filter-pill" data-type="期貨">期貨</button>
+        </div>
+        <!-- 搜尋 -->
+        <div class="relative">
+            <input type="text" id="searchInput" placeholder="搜尋標題、摘要、洞察、機構..."
+                   class="w-full pl-10 pr-10 py-2 rounded-lg border border-gray-300 bg-gray-50 focus:outline-none focus:ring-2 focus:ring-blue-400 text-sm">
+            <svg class="w-4 h-4 text-gray-400 absolute left-3 top-2.5 pointer-events-none" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z"/>
+            </svg>
+            <button id="clearSearch" class="hidden absolute right-3 top-2.5 text-gray-400 hover:text-gray-600">
+                <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"/></svg>
+            </button>
+        </div>
+    </div>
+
+    <!-- 搜尋結果計數 -->
+    <div id="resultCount" class="hidden mb-4 text-center text-sm text-gray-500 font-medium"></div>
+
+    <!-- 兩欄主體 -->
+    <div class="flex items-start gap-5 mb-16">
+
+        <!-- 左側文章清單 (sticky) -->
+        <nav id="articleNav" class="hidden lg:flex flex-col w-56 flex-shrink-0 self-start bg-white rounded-2xl card" style="position:sticky; top:68px; max-height:calc(100vh - 80px);">
+            <div class="px-4 py-3 border-b border-slate-100 flex-shrink-0 flex items-center justify-between">
+                <span class="text-xs font-bold text-gray-400 uppercase tracking-widest">本日文章</span>
+                <span id="articleNavCount" class="text-xs text-gray-400"></span>
+            </div>
+            <div id="articleNavList" class="overflow-y-auto flex-1 p-2"></div>
+        </nav>
+
+        <!-- 右側文章詳情 -->
+        <div id="articleDetail" class="flex-1 min-w-0 bg-white rounded-2xl card p-5 sm:p-8" style="min-height:480px;">
+            <div class="text-gray-400 text-center py-16 text-sm">
+                <svg class="w-10 h-10 mx-auto mb-3 text-gray-300 animate-spin" fill="none" viewBox="0 0 24 24">
+                    <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"/>
+                    <path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8v8z"/>
+                </svg>
+                載入中...
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Footer -->
+<footer class="hero-bg text-white/50 text-center py-6 text-xs mt-4">
+    <p>元大金控 數位金融事業處 · 內部參考用途</p>
+</footer>
+
+<!-- Mobile: floating nav button -->
+<button id="mobileNavBtn" onclick="openMobileNav()"
+        class="fixed bottom-6 right-4 z-50 lg:hidden w-12 h-12 bg-blue-700 text-white rounded-xl shadow-lg flex-col items-center justify-center gap-0.5 hidden"
+        style="box-shadow:0 4px 20px rgba(29,78,216,0.4);">
+    <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 6h16M4 12h16M4 18h16"/></svg>
+    <span id="mobileNavIndicator" style="font-size:10px; font-weight:700;"></span>
+</button>
+<div id="mobileNavOverlay" onclick="closeMobileNav()"></div>
+<div id="mobileNavDrawer">
+    <div class="flex justify-center pt-3 pb-1 flex-shrink-0">
+        <div class="w-10 h-1 rounded-full bg-gray-200"></div>
+    </div>
+    <div class="px-5 py-2.5 border-b border-slate-100 flex items-center justify-between flex-shrink-0">
+        <span class="text-xs font-bold text-gray-500 uppercase tracking-widest">本日文章</span>
+        <button onclick="closeMobileNav()" class="p-1 text-gray-400 hover:text-gray-600">
+            <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"/></svg>
+        </button>
+    </div>
+    <div id="mobileNavList" class="overflow-y-auto flex-1 p-3"></div>
+</div>
+
+
+<script>
+// ─── CONFIG ──────────────────────────────────────────────────
+// 請將以下兩個 URL 替換為您 Google Sheet 的發布 CSV 網址
+// 方法：Google Sheets → 檔案 → 發布到網路 → 選擇各 worksheet → CSV → 複製連結
+const URL_ARTICLES = 'https://docs.google.com/spreadsheets/d/e/2PACX-1vS3jJajis01zdjURBnc3N8s8lWGLaKroD-C91JxYc0QS3UmySZ7ZX2pfvNSoLU0HHUwVOc7qa3D9nSB/pub?output=csv&gid=1398464012';
+const URL_SUMMARY  = 'https://docs.google.com/spreadsheets/d/e/2PACX-1vS3jJajis01zdjURBnc3N8s8lWGLaKroD-C91JxYc0QS3UmySZ7ZX2pfvNSoLU0HHUwVOc7qa3D9nSB/pub?output=csv&gid=1068875418';
+
+// ─── CATEGORY COLORS ─────────────────────────────────────────
+const CAT_COLORS = {
+    '總體經濟': { dot: 'bg-blue-400',    badge: 'bg-blue-100 text-blue-800' },
+    '股市行情': { dot: 'bg-emerald-400', badge: 'bg-emerald-100 text-emerald-800' },
+    '競業動態': { dot: 'bg-purple-400',  badge: 'bg-purple-100 text-purple-800' },
+    '元大新聞': { dot: 'bg-orange-400',  badge: 'bg-orange-100 text-orange-800' },
+    '兩岸金融': { dot: 'bg-rose-400',    badge: 'bg-rose-100 text-rose-800' },
+    '法規監理': { dot: 'bg-teal-400',    badge: 'bg-teal-100 text-teal-800' },
+};
+const DEFAULT_COLORS = { dot: 'bg-gray-400', badge: 'bg-gray-100 text-gray-700' };
+
+const GROUP_MAP = {
+    '元大':['元大金控','元大銀行','元大投信','元大投顧','元大證券','元大期貨','元大人壽','元大創投','元大國際資產(AMC)','元大證金'],
+    '國泰':['國泰金控','國泰人壽','國泰世華銀行','國泰投信','國泰證券'],
+    '富邦':['富邦金控','台北富邦銀行','富邦人壽','富邦證券','富邦投信'],
+    '中信':['中信金控','中國信託商業銀行','台灣人壽','中信證券','中信投信'],
+    '玉山':['玉山金控','玉山銀行','玉山證券'],
+    '永豐':['永豐金控','永豐銀行','永豐金證券'],
+    '兆豐':['兆豐金控','兆豐銀行','兆豐證券','兆豐投信'],
+    '第一':['第一金控','第一銀行','第一金證券','第一金投信'],
+    '台新':['台新金控','台新銀行','台新人壽','台新證券','台新投信'],
+    '合庫':['合庫金控','合作金庫銀行','合庫證券','合庫投信'],
+    '華南':['華南金控','華南銀行','華南永昌證券'],
+    '凱基':['開發金控','凱基銀行','凱基證券','凱基投信','凱基金控'],
+};
+
+// ─── STATE ───────────────────────────────────────────────────
+let allArticles = [];
+let allSummaries = [];
+let filteredArticles = [];
+let availableDates = [];
+let currentDate = '';
+let currentCat = 'ALL';
+let currentGroup = 'ALL';
+let currentType = 'ALL';
+let currentSearch = '';
+let selectedIndex = 0;
+
+// ─── INIT ─────────────────────────────────────────────────────
+Promise.all([fetchCSV(URL_ARTICLES), fetchCSV(URL_SUMMARY)]).then(([artData, sumData]) => {
+    allArticles = artData;
+    allSummaries = sumData;
+
+    availableDates = [...new Set(allArticles.map(a => a['日期']))].sort().reverse();
+
+    const sel = document.getElementById('dateSelector');
+    sel.innerHTML = '';
+    availableDates.forEach(d => {
+        const opt = document.createElement('option');
+        opt.value = d;
+        opt.textContent = formatDateLabel(d);
+        sel.appendChild(opt);
+    });
+
+    currentDate = availableDates[0] || '';
+    applyFilters();
+}).catch(err => {
+    console.error('資料載入失敗', err);
+    document.getElementById('articleDetail').innerHTML = `<div class="text-red-400 text-center py-16 text-sm">資料載入失敗，請確認 Google Sheet URL 設定正確。<br>${err}</div>`;
+});
+
+document.getElementById('dateSelector').addEventListener('change', e => {
+    currentDate = e.target.value;
+    applyFilters();
+});
+
+// Filter pills
+document.querySelectorAll('[data-cat]').forEach(btn => {
+    btn.addEventListener('click', () => {
+        currentCat = btn.dataset.cat;
+        document.querySelectorAll('[data-cat]').forEach(b => b.classList.remove('active-cat'));
+        btn.classList.add('active-cat');
+        applyFilters();
+    });
+});
+document.querySelectorAll('[data-group]').forEach(btn => {
+    btn.addEventListener('click', () => {
+        currentGroup = btn.dataset.group;
+        document.querySelectorAll('[data-group]').forEach(b => b.classList.remove('active-group'));
+        btn.classList.add('active-group');
+        applyFilters();
+    });
+});
+document.querySelectorAll('[data-type]').forEach(btn => {
+    btn.addEventListener('click', () => {
+        currentType = btn.dataset.type;
+        document.querySelectorAll('[data-type]').forEach(b => b.classList.remove('active-type'));
+        btn.classList.add('active-type');
+        applyFilters();
+    });
+});
+
+const searchInput = document.getElementById('searchInput');
+const clearSearchBtn = document.getElementById('clearSearch');
+searchInput.addEventListener('input', e => {
+    currentSearch = e.target.value.trim();
+    clearSearchBtn.classList.toggle('hidden', !currentSearch);
+    applyFilters();
+});
+clearSearchBtn.addEventListener('click', () => {
+    searchInput.value = '';
+    currentSearch = '';
+    clearSearchBtn.classList.add('hidden');
+    applyFilters();
+});
+
+// ─── DATA LOADING ─────────────────────────────────────────────
+function fetchCSV(url) {
+    return new Promise((resolve, reject) => {
+        Papa.parse(url, {
+            download: true,
+            header: true,
+            skipEmptyLines: true,
+            complete: r => resolve(r.data),
+            error: e => reject(e),
+        });
+    });
+}
+
+// ─── FILTERS ──────────────────────────────────────────────────
+function entityMatchesGroup(entitiesStr, groupKey) {
+    if (!entitiesStr) return false;
+    const members = GROUP_MAP[groupKey] || [];
+    const entities = entitiesStr.split(',').map(s => s.trim());
+    return entities.some(e => members.some(m => e.includes(m) || m.includes(e)));
+}
+
+function applyFilters() {
+    const dayArticles = allArticles.filter(a => a['日期'] === currentDate);
+
+    filteredArticles = dayArticles.filter(a => {
+        if (currentCat !== 'ALL' && a['news_category'] !== currentCat) return false;
+        if (currentGroup !== 'ALL' && !entityMatchesGroup(a['entities'], currentGroup)) return false;
+        if (currentType !== 'ALL' && a['business_type'] !== currentType) return false;
+        if (currentSearch) {
+            const q = currentSearch.toLowerCase();
+            const haystack = [a['title'], a['summary'], a['pm_insight'], a['entities'], a['yuanta_insight']]
+                .join(' ').toLowerCase();
+            if (!haystack.includes(q)) return false;
+        }
+        return true;
+    });
+
+    selectedIndex = 0;
+
+    // Summary
+    const sumRow = allSummaries.find(s => s['日期'] === currentDate);
+    renderSummary(sumRow ? sumRow['executive_summary'] : '');
+
+    // Hero subtitle
+    const label = currentDate ? `${formatDateLabel(currentDate)}｜共 ${filteredArticles.length} 則` : '無資料';
+    document.getElementById('heroSubtitle').textContent = label;
+
+    // Result count if searching/filtering
+    const isFiltered = currentCat !== 'ALL' || currentGroup !== 'ALL' || currentType !== 'ALL' || currentSearch;
+    const rc = document.getElementById('resultCount');
+    if (isFiltered && currentDate) {
+        rc.classList.remove('hidden');
+        rc.textContent = `篩選結果：共 ${filteredArticles.length} 則`;
+    } else {
+        rc.classList.add('hidden');
+    }
+
+    renderNav();
+    renderDetail(selectedIndex);
+
+    const mobileBtn = document.getElementById('mobileNavBtn');
+    if (filteredArticles.length > 0) mobileBtn.classList.remove('hidden');
+    else mobileBtn.classList.add('hidden');
+    document.getElementById('mobileNavIndicator').textContent = filteredArticles.length;
+}
+
+// ─── SUMMARY ──────────────────────────────────────────────────
+function renderSummary(text) {
+    const ul = document.getElementById('summaryList');
+    if (!text) {
+        ul.innerHTML = '<li class="text-gray-400">今日尚無摘要資料。</li>';
+        return;
+    }
+    const bullets = text.split('\n').filter(s => s.trim());
+    ul.innerHTML = bullets.map(b =>
+        `<li class="flex items-start gap-2"><span class="text-orange-500 font-bold mt-0.5 flex-shrink-0">•</span><span>${esc(b.trim())}</span></li>`
+    ).join('');
+}
+
+// ─── NAV ──────────────────────────────────────────────────────
+function renderNav() {
+    const count = filteredArticles.length;
+    document.getElementById('articleNavCount').textContent = count > 0 ? `${count} 則` : '';
+
+    const makeItems = (containerEl) => {
+        containerEl.innerHTML = filteredArticles.length === 0
+            ? '<p class="text-xs text-gray-400 text-center py-4">無符合條件的文章</p>'
+            : filteredArticles.map((a, i) => {
+                const cat = a['news_category'] || '';
+                const colors = CAT_COLORS[cat] || DEFAULT_COLORS;
+                const active = i === selectedIndex ? 'active' : '';
+                return `<button class="news-nav-item ${active}" onclick="selectArticle(${i})">
+                    <span class="nav-num">${i + 1}</span>
+                    <span class="nav-cat-dot ${colors.dot}"></span>
+                    <span class="nav-title">${esc(a['title'] || '（無標題）')}</span>
+                </button>`;
+            }).join('');
+    };
+
+    makeItems(document.getElementById('articleNavList'));
+    makeItems(document.getElementById('mobileNavList'));
+}
+
+// ─── DETAIL ───────────────────────────────────────────────────
+function renderDetail(idx) {
+    const el = document.getElementById('articleDetail');
+    if (filteredArticles.length === 0) {
+        el.innerHTML = `<div class="text-gray-400 text-center py-20 text-sm">
+            <p class="text-4xl mb-4">🔍</p>
+            <p>沒有符合篩選條件的文章</p>
+        </div>`;
+        return;
+    }
+    const a = filteredArticles[idx];
+    const cat = a['news_category'] || '';
+    const colors = CAT_COLORS[cat] || DEFAULT_COLORS;
+
+    const entitiesHtml = (a['entities'] || '').split(',').filter(s => s.trim()).map(e =>
+        `<span class="inline-block px-2 py-0.5 rounded-full text-xs bg-indigo-100 text-indigo-700 font-medium">${esc(e.trim())}</span>`
+    ).join(' ');
+
+    const yuantaEntities = (a['yuanta_entities'] || '').split(',').filter(s => s.trim());
+    const yuantaHtml = yuantaEntities.length > 0 ? `
+        <div class="yuanta-block rounded-xl p-4 h-full">
+            <div class="flex items-center gap-2 mb-2">
+                <span class="text-base">🏢</span>
+                <span class="text-sm font-bold text-blue-800">元大視角</span>
+                <div class="flex flex-wrap gap-1">
+                    ${yuantaEntities.map(e => `<span class="text-xs px-2 py-0.5 rounded-full bg-blue-100 text-blue-700 font-medium">${esc(e.trim())}</span>`).join('')}
+                </div>
+            </div>
+            <p class="text-sm text-gray-700 leading-relaxed">${formatInsight(a['yuanta_insight'] || '')}</p>
+        </div>` : '';
+
+    const pmInsight = a['pm_insight'] || '';
+    const pmHtml = pmInsight ? `
+        <div class="insight-block rounded-xl p-4 h-full">
+            <div class="flex items-center gap-2 mb-2">
+                <span class="text-base">💡</span>
+                <span class="text-sm font-bold text-orange-700">PM 洞察</span>
+            </div>
+            <p class="text-sm text-gray-700 leading-relaxed">${formatInsight(pmInsight)}</p>
+        </div>` : '';
+
+    const hasPdf = !!(a['pdf_filename'] && a['page_number']);
+    const pdfFilename = hasPdf ? a['pdf_filename'] : '';
+    const pdfPageNum = hasPdf ? (parseInt(a['page_number']) || 1) : 1;
+    const pdfEmbed = hasPdf ? `
+        <div class="mt-6">
+            <p class="text-xs font-bold text-gray-400 uppercase tracking-widest mb-3">原文</p>
+            <div class="pdf-embed-container">
+                <canvas id="pdf-canvas" class="w-full" style="display:none;"></canvas>
+            </div>
+        </div>` : '';
+
+    const navHtml = filteredArticles.length > 1 ? `
+        <div class="flex items-center gap-2">
+            ${idx > 0 ? `<button onclick="selectArticle(${idx-1})" class="flex items-center gap-1 px-3 py-1.5 rounded-lg border border-gray-200 text-sm text-gray-600 hover:bg-gray-50 transition-colors"><svg class="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 19l-7-7 7-7"/></svg>上一則</button>` : ''}
+            ${idx < filteredArticles.length - 1 ? `<button onclick="selectArticle(${idx+1})" class="flex items-center gap-1 px-3 py-1.5 rounded-lg border border-gray-200 text-sm text-gray-600 hover:bg-gray-50 transition-colors">下一則<svg class="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5l7 7-7 7"/></svg></button>` : ''}
+        </div>` : '';
+
+
+    const businessBadge = a['business_type'] ? `<span class="inline-block px-2 py-0.5 rounded-full text-xs bg-slate-100 text-slate-600 font-medium">${esc(a['business_type'])}</span>` : '';
+
+    el.innerHTML = `
+        <div class="flex flex-wrap items-start justify-between gap-3 mb-5">
+            <div class="flex flex-wrap gap-1.5 items-center">
+                <span class="inline-block px-2 py-0.5 rounded-full text-xs font-semibold ${colors.badge}">${esc(cat)}</span>
+                ${businessBadge}
+                <span class="text-xs text-gray-400">${esc(a['source_name'] || '')} · ${esc(a['publish_date'] || a['日期'] || '')}</span>
+            </div>
+            <div class="flex items-center gap-2">
+                ${navHtml}
+            </div>
+        </div>
+
+        <h2 class="text-xl sm:text-2xl font-bold text-gray-900 leading-snug mb-3">${highlightSearch(esc(a['title'] || '（無標題）'))}</h2>
+
+        ${entitiesHtml ? `<div class="flex flex-wrap gap-1.5 mb-4">${entitiesHtml}</div>` : ''}
+
+        <div class="bg-gray-50 rounded-xl p-4 mb-1">
+            <p class="text-xs font-bold text-gray-400 uppercase tracking-widest mb-2">新聞摘要</p>
+            <p class="text-sm text-gray-700 leading-relaxed">${highlightSearch(esc(a['summary'] || '無摘要'))}</p>
+        </div>
+
+        ${(pmHtml || yuantaHtml) ? `<div class="grid grid-cols-1 sm:grid-cols-2 gap-4 mt-4">${pmHtml}${yuantaHtml}</div>` : ''}
+        ${pdfEmbed}
+    `;
+
+    if (hasPdf) {
+        window.renderPdfPage(pdfFilename, pdfPageNum);
+    }
+}
+
+function selectArticle(idx) {
+    selectedIndex = idx;
+    renderNav();
+    renderDetail(idx);
+    closeMobileNav();
+    document.getElementById('articleDetail').scrollIntoView({ behavior: 'smooth', block: 'start' });
+}
+
+// ─── MOBILE NAV ───────────────────────────────────────────────
+function openMobileNav() {
+    document.getElementById('mobileNavOverlay').classList.add('open');
+    document.getElementById('mobileNavDrawer').classList.add('open');
+}
+function closeMobileNav() {
+    document.getElementById('mobileNavOverlay').classList.remove('open');
+    document.getElementById('mobileNavDrawer').classList.remove('open');
+}
+
+// ─── HELPERS ──────────────────────────────────────────────────
+function esc(str) {
+    return String(str).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;');
+}
+
+function highlightSearch(html) {
+    if (!currentSearch) return html;
+    const q = currentSearch.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
+    return html.replace(new RegExp(`(${q})`, 'gi'), '<mark>$1</mark>');
+}
+
+function formatInsight(text) {
+    return esc(text)
+        .replace(/。\*\*/g, '。<br>**')
+        .replace(/\*\*(.+?)\*\*/g, '<strong>$1</strong>')
+        .replace(/。([^\s。<]{1,12}[：:])/g, '。<br>$1')
+        .replace(/\n/g, '<br>');
+}
+
+function formatDateLabel(dateStr) {
+    if (!dateStr || dateStr.length < 8) return dateStr;
+    const y = dateStr.slice(0,4), m = dateStr.slice(4,6), d = dateStr.slice(6,8);
+    return `${y}/${m}/${d}`;
+}
+</script>
+</body>
+</html>
