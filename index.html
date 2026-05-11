@@ -178,11 +178,16 @@
             <span class="text-sm font-medium text-gray-600 whitespace-nowrap">📰 新聞類別：</span>
             <button class="filter-pill active-cat" data-cat="ALL">全部</button>
             <button class="filter-pill" data-cat="總體經濟">📊 總體經濟</button>
-            <button class="filter-pill" data-cat="股市行情">📈 股市行情</button>
+            <button class="filter-pill" data-cat="台股行情">📈 台股行情</button>
+            <button class="filter-pill" data-cat="國際股市">🌐 國際股市</button>
+            <button class="filter-pill" data-cat="金融商品">💹 金融商品</button>
+            <button class="filter-pill" data-cat="房市動態">🏠 房市動態</button>
+            <button class="filter-pill" data-cat="外匯市場">💱 外匯市場</button>
+            <button class="filter-pill" data-cat="地緣政治">🌏 地緣政治</button>
+            <button class="filter-pill" data-cat="金融監管">⚖️ 金融監管</button>
             <button class="filter-pill" data-cat="競業動態">🏢 競業動態</button>
             <button class="filter-pill" data-cat="元大新聞">⭐ 元大新聞</button>
-            <button class="filter-pill" data-cat="中國金融市場">🌏 中國金融市場</button>
-            <button class="filter-pill" data-cat="法規監理">⚖️ 法規監理</button>
+            <button class="filter-pill" data-cat="社論與專家評論">✍️ 社論與專家評論</button>
         </div>
         <!-- 集團篩選 -->
         <div class="flex flex-wrap items-center gap-2 mb-3">
@@ -212,6 +217,7 @@
             <button class="filter-pill" data-type="投信">投信</button>
             <button class="filter-pill" data-type="投顧">投顧</button>
             <button class="filter-pill" data-type="期貨">期貨</button>
+            <button class="filter-pill" data-type="綜合">綜合</button>
         </div>
         <!-- 搜尋 -->
         <div class="relative">
@@ -288,12 +294,17 @@ const URL_SUMMARY  = 'https://docs.google.com/spreadsheets/d/e/2PACX-1vS3jJajis0
 
 // ---------------- CATEGORY COLORS ----------------
 const CAT_COLORS = {
-    '總體經濟': { dot: 'bg-blue-400',    badge: 'bg-blue-100 text-blue-800' },
-    '股市行情': { dot: 'bg-emerald-400', badge: 'bg-emerald-100 text-emerald-800' },
-    '競業動態': { dot: 'bg-purple-400',  badge: 'bg-purple-100 text-purple-800' },
-    '元大新聞': { dot: 'bg-orange-400',  badge: 'bg-orange-100 text-orange-800' },
-    '中國金融市場': { dot: 'bg-rose-400', badge: 'bg-rose-100 text-rose-800' },
-    '法規監理': { dot: 'bg-teal-400',    badge: 'bg-teal-100 text-teal-800' },
+    '總體經濟':     { dot: 'bg-blue-400',    badge: 'bg-blue-100 text-blue-800' },
+    '台股行情':     { dot: 'bg-emerald-400', badge: 'bg-emerald-100 text-emerald-800' },
+    '國際股市':     { dot: 'bg-cyan-400',    badge: 'bg-cyan-100 text-cyan-800' },
+    '金融商品':     { dot: 'bg-violet-400',  badge: 'bg-violet-100 text-violet-800' },
+    '房市動態':     { dot: 'bg-amber-400',   badge: 'bg-amber-100 text-amber-800' },
+    '外匯市場':     { dot: 'bg-lime-400',    badge: 'bg-lime-100 text-lime-800' },
+    '地緣政治':     { dot: 'bg-rose-400',    badge: 'bg-rose-100 text-rose-800' },
+    '金融監管':     { dot: 'bg-teal-400',    badge: 'bg-teal-100 text-teal-800' },
+    '競業動態':     { dot: 'bg-purple-400',  badge: 'bg-purple-100 text-purple-800' },
+    '元大新聞':     { dot: 'bg-orange-400',  badge: 'bg-orange-100 text-orange-800' },
+    '社論與專家評論': { dot: 'bg-slate-400',  badge: 'bg-slate-100 text-slate-700' },
 };
 const DEFAULT_COLORS = { dot: 'bg-gray-400', badge: 'bg-gray-100 text-gray-700' };
 
@@ -620,7 +631,10 @@ function formatInsight(text) {
         .replace(/。\*\*/g, '。<br>**')
         .replace(/\*\*(.+?)\*\*/g, '<strong>$1</strong>')
         .replace(/。([^\s。<]{1,12}[：:])/g, '。<br>$1')
-        .replace(/\n/g, '<br>');
+        .replace(/\n/g, '<br>')
+        .replace(/\s*／\s*/g, '')
+        .replace(/(.)【/g, '$1<br>【')
+        .replace(/【(.+?)】/g, '<span class="font-semibold text-blue-600">【$1】</span>');
 }
 
 function formatDateLabel(dateStr) {
