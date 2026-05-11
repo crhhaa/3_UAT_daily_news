@@ -33,7 +33,7 @@
                 loadingEl.remove();
                 canvas.style.display = 'block';
             } catch (e) {
-                loadingEl.textContent = '原文圖片載入失敗';
+                loadingEl.textContent = '原始新聞載入失敗';
             }
         };
     </script>
@@ -114,9 +114,9 @@
 </head>
 <body class="bg-slate-100 text-gray-800 antialiased">
 
-<!-- ═══════════════════════════════════════════════════
+<!-- -------------------------------------------------------------------------------------------
      NAVBAR
-═══════════════════════════════════════════════════ -->
+------------------------------------------------------------------------------------------- -->
 <nav class="hero-bg text-white sticky top-0 z-50" style="box-shadow:0 2px 20px rgba(0,0,0,0.25);">
     <div class="max-w-7xl mx-auto px-4 sm:px-6">
         <div class="flex items-center justify-between h-14">
@@ -132,9 +132,9 @@
     </div>
 </nav>
 
-<!-- ═══════════════════════════════════════════════════
+<!-- -------------------------------------------------------------------------------------------
      HERO
-═══════════════════════════════════════════════════ -->
+------------------------------------------------------------------------------------------- -->
 <div class="hero-bg text-white py-8 sm:py-10 relative overflow-hidden" style="box-shadow:0 4px 30px rgba(15,36,96,0.3);">
     <div class="absolute -top-16 -right-16 w-64 h-64 rounded-full bg-white/5 pointer-events-none"></div>
     <div class="absolute -bottom-20 -left-10 w-48 h-48 rounded-full bg-orange-500/10 pointer-events-none"></div>
@@ -156,12 +156,12 @@
     </div>
 </div>
 
-<!-- ═══════════════════════════════════════════════════
+<!-- -------------------------------------------------------------------------------------------
      MAIN CONTENT
-═══════════════════════════════════════════════════ -->
+------------------------------------------------------------------------------------------- -->
 <div class="max-w-7xl mx-auto px-4 sm:px-6 py-6">
 
-    <!-- 本日新聞摘要 -->
+    <!-- daily summary -->
     <div id="summarySection" class="bg-white rounded-2xl card p-5 mb-5" style="border-top: 3px solid #f97316;">
         <h2 class="text-base font-bold text-blue-900 mb-3 flex items-center gap-2 uppercase tracking-widest">
             <span class="text-orange-500">📋</span> 本日新聞摘要
@@ -181,7 +181,7 @@
             <button class="filter-pill" data-cat="股市行情">📈 股市行情</button>
             <button class="filter-pill" data-cat="競業動態">🏢 競業動態</button>
             <button class="filter-pill" data-cat="元大新聞">⭐ 元大新聞</button>
-            <button class="filter-pill" data-cat="兩岸金融">🌏 兩岸金融</button>
+            <button class="filter-pill" data-cat="中國金融市場">🌏 中國金融市場</button>
             <button class="filter-pill" data-cat="法規監理">⚖️ 法規監理</button>
         </div>
         <!-- 集團篩選 -->
@@ -229,10 +229,10 @@
     <!-- 搜尋結果計數 -->
     <div id="resultCount" class="hidden mb-4 text-center text-sm text-gray-500 font-medium"></div>
 
-    <!-- 兩欄主體 -->
+    <!-- main tab -->
     <div class="flex items-start gap-5 mb-16">
 
-        <!-- 左側文章清單 (sticky) -->
+        <!-- 左tab(文章清單) -->
         <nav id="articleNav" class="hidden lg:flex flex-col w-56 flex-shrink-0 self-start bg-white rounded-2xl card" style="position:sticky; top:68px; max-height:calc(100vh - 80px);">
             <div class="px-4 py-3 border-b border-slate-100 flex-shrink-0 flex items-center justify-between">
                 <span class="text-xs font-bold text-gray-400 uppercase tracking-widest">本日文章</span>
@@ -241,7 +241,7 @@
             <div id="articleNavList" class="overflow-y-auto flex-1 p-2"></div>
         </nav>
 
-        <!-- 右側文章詳情 -->
+        <!-- 右tab -->
         <div id="articleDetail" class="flex-1 min-w-0 bg-white rounded-2xl card p-5 sm:p-8" style="min-height:480px;">
             <div class="text-gray-400 text-center py-16 text-sm">
                 <svg class="w-10 h-10 mx-auto mb-3 text-gray-300 animate-spin" fill="none" viewBox="0 0 24 24">
@@ -282,19 +282,17 @@
 
 
 <script>
-// ─── CONFIG ──────────────────────────────────────────────────
-// 請將以下兩個 URL 替換為您 Google Sheet 的發布 CSV 網址
-// 方法：Google Sheets → 檔案 → 發布到網路 → 選擇各 worksheet → CSV → 複製連結
+// ---------------- CONFIG ----------------
 const URL_ARTICLES = 'https://docs.google.com/spreadsheets/d/e/2PACX-1vS3jJajis01zdjURBnc3N8s8lWGLaKroD-C91JxYc0QS3UmySZ7ZX2pfvNSoLU0HHUwVOc7qa3D9nSB/pub?output=csv&gid=1398464012';
 const URL_SUMMARY  = 'https://docs.google.com/spreadsheets/d/e/2PACX-1vS3jJajis01zdjURBnc3N8s8lWGLaKroD-C91JxYc0QS3UmySZ7ZX2pfvNSoLU0HHUwVOc7qa3D9nSB/pub?output=csv&gid=1068875418';
 
-// ─── CATEGORY COLORS ─────────────────────────────────────────
+// ---------------- CATEGORY COLORS ----------------
 const CAT_COLORS = {
     '總體經濟': { dot: 'bg-blue-400',    badge: 'bg-blue-100 text-blue-800' },
     '股市行情': { dot: 'bg-emerald-400', badge: 'bg-emerald-100 text-emerald-800' },
     '競業動態': { dot: 'bg-purple-400',  badge: 'bg-purple-100 text-purple-800' },
     '元大新聞': { dot: 'bg-orange-400',  badge: 'bg-orange-100 text-orange-800' },
-    '兩岸金融': { dot: 'bg-rose-400',    badge: 'bg-rose-100 text-rose-800' },
+    '中國金融市場': { dot: 'bg-rose-400', badge: 'bg-rose-100 text-rose-800' },
     '法規監理': { dot: 'bg-teal-400',    badge: 'bg-teal-100 text-teal-800' },
 };
 const DEFAULT_COLORS = { dot: 'bg-gray-400', badge: 'bg-gray-100 text-gray-700' };
@@ -314,7 +312,7 @@ const GROUP_MAP = {
     '凱基':['開發金控','凱基銀行','凱基證券','凱基投信','凱基金控'],
 };
 
-// ─── STATE ───────────────────────────────────────────────────
+// ---------------- STATE ----------------
 let allArticles = [];
 let allSummaries = [];
 let filteredArticles = [];
@@ -326,7 +324,7 @@ let currentType = 'ALL';
 let currentSearch = '';
 let selectedIndex = 0;
 
-// ─── INIT ─────────────────────────────────────────────────────
+// ---------------- INIT ----------------
 Promise.all([fetchCSV(URL_ARTICLES), fetchCSV(URL_SUMMARY)]).then(([artData, sumData]) => {
     allArticles = artData;
     allSummaries = sumData;
@@ -346,7 +344,7 @@ Promise.all([fetchCSV(URL_ARTICLES), fetchCSV(URL_SUMMARY)]).then(([artData, sum
     applyFilters();
 }).catch(err => {
     console.error('資料載入失敗', err);
-    document.getElementById('articleDetail').innerHTML = `<div class="text-red-400 text-center py-16 text-sm">資料載入失敗，請確認 Google Sheet URL 設定正確。<br>${err}</div>`;
+    document.getElementById('articleDetail').innerHTML = `<div class="text-red-400 text-center py-16 text-sm">need to check google sheet URL<br>${err}</div>`;
 });
 
 document.getElementById('dateSelector').addEventListener('change', e => {
@@ -394,7 +392,7 @@ clearSearchBtn.addEventListener('click', () => {
     applyFilters();
 });
 
-// ─── DATA LOADING ─────────────────────────────────────────────
+// ---------------- DATA LOADING ----------------
 function fetchCSV(url) {
     return new Promise((resolve, reject) => {
         Papa.parse(url, {
@@ -407,7 +405,7 @@ function fetchCSV(url) {
     });
 }
 
-// ─── FILTERS ──────────────────────────────────────────────────
+// ---------------- FILTERS ----------------
 function entityMatchesGroup(entitiesStr, groupKey) {
     if (!entitiesStr) return false;
     const members = GROUP_MAP[groupKey] || [];
@@ -460,7 +458,7 @@ function applyFilters() {
     document.getElementById('mobileNavIndicator').textContent = filteredArticles.length;
 }
 
-// ─── SUMMARY ──────────────────────────────────────────────────
+// ---------------- SUMMARY ----------------
 function renderSummary(text) {
     const ul = document.getElementById('summaryList');
     if (!text) {
@@ -473,7 +471,7 @@ function renderSummary(text) {
     ).join('');
 }
 
-// ─── NAV ──────────────────────────────────────────────────────
+// ---------------- NAV ----------------
 function renderNav() {
     const count = filteredArticles.length;
     document.getElementById('articleNavCount').textContent = count > 0 ? `${count} 則` : '';
@@ -497,7 +495,7 @@ function renderNav() {
     makeItems(document.getElementById('mobileNavList'));
 }
 
-// ─── DETAIL ───────────────────────────────────────────────────
+// ---------------- DETAIL ----------------
 function renderDetail(idx) {
     const el = document.getElementById('articleDetail');
     if (filteredArticles.length === 0) {
@@ -596,7 +594,7 @@ function selectArticle(idx) {
     document.getElementById('articleDetail').scrollIntoView({ behavior: 'smooth', block: 'start' });
 }
 
-// ─── MOBILE NAV ───────────────────────────────────────────────
+// ---------------- MOBILE NAV ----------------
 function openMobileNav() {
     document.getElementById('mobileNavOverlay').classList.add('open');
     document.getElementById('mobileNavDrawer').classList.add('open');
@@ -606,7 +604,7 @@ function closeMobileNav() {
     document.getElementById('mobileNavDrawer').classList.remove('open');
 }
 
-// ─── HELPERS ──────────────────────────────────────────────────
+// ---------------- HELPERS ----------------
 function esc(str) {
     return String(str).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;');
 }
